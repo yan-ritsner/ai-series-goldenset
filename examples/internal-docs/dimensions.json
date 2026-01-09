@@ -1,0 +1,9 @@
+{
+  "keys": {
+    "intent": ["policy", "howto", "troubleshooting", "onboarding", "incident", "other"],
+    "department": ["eng", "security", "hr", "it", "ops", "finance", "legal", "product", "other"],
+    "docType": ["policy", "runbook", "faq", "howto", "onboarding", "rfc", "other"],
+    "criticality": ["low", "medium", "high"]
+  }
+}
+

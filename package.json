@@ -12,8 +12,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "description": "Golden Dataset Management Tool for AI/LLM systems",
   "dependencies": {
     "better-sqlite3": "^12.5.0",
     "commander": "^14.0.2",

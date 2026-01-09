@@ -1,0 +1,8 @@
+{"artifactId":"doc:handbook/oncall","type":"doc","title":"On-call escalation procedures","uri":"https://example.com/handbook/oncall","updatedAt":"2026-01-01T00:00:00Z","meta":{"owner":"sre","criticality":"high","source":"handbook"}}
+{"artifactId":"doc:handbook/security-policy","type":"doc","title":"Security policy and guidelines","uri":"https://example.com/handbook/security","updatedAt":"2026-01-02T00:00:00Z","meta":{"owner":"security","criticality":"high","source":"handbook"}}
+{"artifactId":"doc:runbook/database-backup","type":"runbook","title":"Database backup and restore procedures","uri":"https://example.com/runbooks/db-backup","updatedAt":"2026-01-03T00:00:00Z","meta":{"owner":"ops","criticality":"medium","source":"runbooks"}}
+{"artifactId":"doc:faq/benefits","type":"faq","title":"Employee benefits FAQ","uri":"https://example.com/faq/benefits","updatedAt":"2026-01-04T00:00:00Z","meta":{"owner":"hr","criticality":"low","source":"faq"}}
+{"artifactId":"doc:howto/setup-dev-env","type":"howto","title":"Setting up development environment","uri":"https://example.com/howto/dev-env","updatedAt":"2026-01-05T00:00:00Z","meta":{"owner":"eng","criticality":"low","source":"howto"}}
+{"artifactId":"doc:onboarding/welcome","type":"onboarding","title":"Welcome to the team","uri":"https://example.com/onboarding/welcome","updatedAt":"2026-01-06T00:00:00Z","meta":{"owner":"hr","criticality":"medium","source":"onboarding"}}
+{"artifactId":"doc:rfc/api-design","type":"rfc","title":"API design standards","uri":"https://example.com/rfc/api-design","updatedAt":"2026-01-07T00:00:00Z","meta":{"owner":"eng","criticality":"medium","source":"rfc"}}
+
