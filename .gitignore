@@ -14,3 +14,5 @@ datasets/*
 # OS / editor
 .DS_Store
 .env
+
+.cursor/
