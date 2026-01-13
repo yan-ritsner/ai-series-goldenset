@@ -291,19 +291,19 @@ function topUp(
   const extras: Interaction[] = [];
   if (need <= 0) return extras;
 
-  // Deterministic order of groups; within group, pick remaining items deterministically.
   for (const k of groupKeys) {
     if (need <= 0) break;
+
     const group = groups.get(k)!;
-    const already = allocations.get(k) ?? 0;
-    if (already >= group.length) continue;
+    const current = allocations.get(k) ?? 0;
+    if (current >= group.length) continue;
 
-    // Remaining candidates are group[already..]
-    const remaining = group.slice(already);
-    const take = Math.min(need, remaining.length);
+    const remainingCandidates = group.slice(current);
+    const take = Math.min(need, remainingCandidates.length);
 
-    // Shuffle remaining prefix to avoid always taking earliest IDs
-    extras.push(...sampleFromGroup(remaining, take, rng));
+    extras.push(...sampleFromGroup(remainingCandidates, take, rng));
+
+    allocations.set(k, current + take); // ✅ critical
     need -= take;
   }
 
