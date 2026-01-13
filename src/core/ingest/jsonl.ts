@@ -1,52 +1,50 @@
-import { readFile } from "fs/promises";
+import { createReadStream } from "fs";
+import { createInterface } from "readline";
 import { z } from "zod";
 import type { Interaction, Artifact, Label } from "../types.js";
 
 // Zod schemas for validation
-const RetrievalItemSchema = z.object({
+// Top-level schemas use looseObject for forward compatibility
+// Nested stable shapes use strict object to catch typos
+
+const RetrievalItemSchema = z.looseObject({
   artifactId: z.string().optional(),
   chunkId: z.string().optional(),
   snippetText: z.string().optional(),
   score: z.number().optional(),
 });
 
-const InteractionSchema = z.object({
+const InteractionSchema = z.looseObject({
   interactionId: z.string(),
-  timestamp: z.string(),
+  timestamp: z.iso.datetime(),
   input: z.object({
     text: z.string(),
   }),
-  output: z
-    .object({
-      text: z.string(),
-    })
-    .optional(),
-  context: z
-    .object({
-      retrieval: z
-        .object({
-          items: z.array(RetrievalItemSchema),
-        })
-        .optional(),
-    })
-    .optional(),
+  output: z.object({
+    text: z.string(),
+  }).optional(),
+  context: z.looseObject({
+    retrieval: z.object({
+      items: z.array(RetrievalItemSchema),
+    }).optional(),
+  }).optional(),
   dimensions: z.record(z.string(), z.string()).optional(),
   tags: z.array(z.string()).optional(),
   source: z.string().optional(),
 });
 
-const ArtifactSchema = z.object({
+const ArtifactSchema = z.looseObject({
   artifactId: z.string(),
   type: z.string(),
   title: z.string().optional(),
   uri: z.string().optional(),
-  updatedAt: z.string().optional(),
+  updatedAt: z.iso.datetime().optional(),
   meta: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
 
-const LabelSchema = z.object({
+const LabelSchema = z.looseObject({
   interactionId: z.string(),
-  reviewedAt: z.string(),
+  reviewedAt: z.iso.datetime(),
   reviewer: z.string(),
   verdict: z.enum(["pass", "fail", "needs_clarification"]),
   notes: z.string().optional(),
@@ -61,6 +59,15 @@ const LabelSchema = z.object({
     .optional(),
 });
 
+// UTF-8 BOM regex for stripping from first line
+const UTF8_BOM_REGEX = /^\uFEFF/;
+
+// Maximum characters of content to include in error messages
+const MAX_ERROR_CONTENT_LENGTH = 100;
+
+// Label for root-level validation errors
+const ROOT_ERROR_PATH = "<root>";
+
 export interface ParseError {
   line: number;
   error: string;
@@ -73,42 +80,72 @@ export interface ParseResult<T> {
 }
 
 /**
- * Parse JSONL file and validate each line
+ * Parse JSONL file and validate each line using streaming
  */
 export async function parseJsonl<T>(
   filePath: string,
   schema: z.ZodSchema<T>
 ): Promise<ParseResult<T>> {
-  const content = await readFile(filePath, "utf-8");
-  const lines = content.split("\n").filter((line) => line.trim().length > 0);
-
   const items: T[] = [];
   const errors: ParseError[] = [];
 
-  for (let i = 0; i < lines.length; i++) {
-    const lineNumber = i + 1;
-    const line = lines[i];
+  const fileStream = createReadStream(filePath, { encoding: "utf-8" });
+  const rl = createInterface({
+    input: fileStream,
+    crlfDelay: Infinity,
+  });
 
-    try {
-      const json = JSON.parse(line);
-      const result = schema.safeParse(json);
+  let lineNumber = 0;
 
-      if (result.success) {
-        items.push(result.data);
-      } else {
+  // Handle stream errors
+  fileStream.on("error", (e) => {
+    errors.push({
+      line: lineNumber,
+      error: `Read error: ${e.message}`,
+    });
+  });
+
+  try {
+    for await (const line of rl) {
+      lineNumber++;
+      const trimmed = line.trim();
+
+      // Skip empty lines
+      if (!trimmed) {
+        continue;
+      }
+
+      // Handle UTF-8 BOM on first line
+      const normalized =
+        lineNumber === 1 ? trimmed.replace(UTF8_BOM_REGEX, "") : trimmed;
+
+      try {
+        const json = JSON.parse(normalized);
+        const result = schema.safeParse(json);
+
+        if (result.success) {
+          items.push(result.data);
+        } else {
+          errors.push({
+            line: lineNumber,
+            error: result.error.issues
+              .map((e) => `${e.path.join(".") || ROOT_ERROR_PATH}: ${e.message}`)
+              .join("; "),
+            content: normalized.substring(0, MAX_ERROR_CONTENT_LENGTH),
+          });
+        }
+      } catch (err) {
         errors.push({
           line: lineNumber,
-          error: result.error.issues.map((e) => e.message).join("; "),
-          content: line.substring(0, 100), // First 100 chars for context
+          error: err instanceof Error ? err.message : "Invalid JSON",
+          content: normalized.substring(0, MAX_ERROR_CONTENT_LENGTH),
         });
       }
-    } catch (err) {
-      errors.push({
-        line: lineNumber,
-        error: err instanceof Error ? err.message : "Invalid JSON",
-        content: line.substring(0, 100),
-      });
     }
+  } finally {
+    // Ensure cleanup
+    rl.close();
+    fileStream.destroy();
   }
 
   return { items, errors };
