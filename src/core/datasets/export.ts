@@ -15,7 +15,9 @@ async function writeJsonl(path: string, rows: unknown[]): Promise<void> {
   // Fail fast on write errors
   const done = Promise.race([
     once(ws, "finish"),
-    once(ws, "error").then(([e]) => Promise.reject(e)),
+    once(ws, "error").then(([e]) => {
+      throw e instanceof Error ? e : new Error(String(e));
+    }),
   ]);
 
   for (const row of rows) {
@@ -44,7 +46,7 @@ export async function exportDataset(options: ExportOptions): Promise<void> {
   const { interactions, labels, outputPath, format = "jsonl" } = options;
 
   if (format !== "jsonl") {
-    throw new Error(`Unsupported export format: ${format}`);
+    throw new Error(`Unsupported export format: ${String(format)}`);
   }
 
   await writeJsonl(outputPath, interactions);

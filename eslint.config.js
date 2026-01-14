@@ -1,26 +1,55 @@
-// @ts-check
-import eslint from "@eslint/js";
+import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import prettier from "eslint-config-prettier";
 
-export default tseslint.config(
-  eslint.configs.recommended,
-  ...tseslint.configs.recommended,
+export default [
+  // Ignore build + generated dirs
   {
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      ".goldenset/**",
+      "datasets/**",
+      "eslint.config.js" // Exclude config file from type checking
+    ],
+  },
+
+  // Base JS rules
+  js.configs.recommended,
+
+  // TypeScript rules
+  ...tseslint.configs.recommendedTypeChecked,
+
+  // Your project config
+  {
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: new URL(".", import.meta.url).pathname,
+      },
+    },
+
     rules: {
-      "@typescript-eslint/no-floating-promises": "error",
-      "@typescript-eslint/no-misused-promises": "error",
+      // Practical rules for CLI/tools
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_" }
+      ],
+
+      "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/consistent-type-imports": [
         "error",
-        { prefer: "type-imports", fixStyle: "inline-type-imports" },
+        { prefer: "type-imports" }
       ],
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_" },
-      ],
-      "no-console": "off", // CLI prints are fine
+
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/require-await": "off",
+
+      // We intentionally allow console in CLI tools
+      "no-console": "off",
     },
   },
-  {
-    ignores: ["dist/**", "node_modules/**", "*.config.js", "*.config.ts"],
-  }
-);
+
+  // Disable stylistic conflicts
+  prettier,
+];

@@ -1,7 +1,6 @@
 import { Command } from "commander";
 import { getStore } from "../core/store/index.js";
 import { formatStats } from "../core/analytics/stats.js";
-import type { Interaction } from "../core/types.js";
 
 export function versionsCommand(): Command {
   const cmd = new Command("versions")

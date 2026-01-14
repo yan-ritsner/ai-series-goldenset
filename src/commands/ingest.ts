@@ -11,7 +11,7 @@ export function ingestCommand(): Command {
     .description("Ingest interactions from JSONL file")
     .argument("<file>", "Path to JSONL file")
     .option("--upsert", "Update existing interactions", false)
-    .action(async (file: string, options: { upsert: boolean }) => {
+    .action(async (file: string, _options: { upsert: boolean }) => {
       try {
         const result = await parseInteractions(file);
 
@@ -51,7 +51,7 @@ export function ingestCommand(): Command {
     .description("Ingest artifacts from JSONL file")
     .argument("<file>", "Path to JSONL file")
     .option("--upsert", "Update existing artifacts", false)
-    .action(async (file: string, options: { upsert: boolean }) => {
+    .action(async (file: string, _options: { upsert: boolean }) => {
       try {
         const result = await parseArtifacts(file);
 

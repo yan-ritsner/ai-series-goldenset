@@ -1,11 +1,48 @@
 import Database from "better-sqlite3";
-import { join } from "path";
 import type {
   Interaction,
   Artifact,
   Label,
   DatasetVersion,
 } from "../types.js";
+
+// Types for database row results
+type ArtifactRow = {
+  artifactId: string;
+  type: string;
+  title: string | null;
+  uri: string | null;
+  updatedAt: string | null;
+  meta: string | null;
+};
+
+type InteractionRow = {
+  interactionId: string;
+  timestamp: string;
+  input: string;
+  output: string | null;
+  context: string | null;
+  dimensions: string | null;
+  tags: string | null;
+  source: string | null;
+};
+
+type LabelRow = {
+  interactionId: string;
+  reviewedAt: string;
+  reviewer: string;
+  verdict: string;
+  notes: string | null;
+  expected: string | null;
+};
+
+type DatasetVersionRow = {
+  name: string;
+  createdAt: string;
+  description: string | null;
+  interactionIds: string;
+  stats: string;
+};
 
 export class SQLiteStore {
   private db: Database.Database;
@@ -100,7 +137,7 @@ export class SQLiteStore {
   getArtifact(artifactId: string): Artifact | null {
     const row = this.db
       .prepare("SELECT * FROM artifacts WHERE artifactId = ?")
-      .get(artifactId) as any;
+      .get(artifactId) as ArtifactRow | undefined;
 
     if (!row) return null;
 
@@ -110,7 +147,7 @@ export class SQLiteStore {
       title: row.title || undefined,
       uri: row.uri || undefined,
       updatedAt: row.updatedAt || undefined,
-      meta: row.meta ? JSON.parse(row.meta) : undefined,
+      meta: row.meta ? (JSON.parse(row.meta) as Record<string, string | number | boolean>) : undefined,
     };
   }
 
@@ -144,18 +181,18 @@ export class SQLiteStore {
   getInteraction(interactionId: string): Interaction | null {
     const row = this.db
       .prepare("SELECT * FROM interactions WHERE interactionId = ?")
-      .get(interactionId) as any;
+      .get(interactionId) as InteractionRow | undefined;
 
     if (!row) return null;
 
     return {
       interactionId: row.interactionId,
       timestamp: row.timestamp,
-      input: JSON.parse(row.input),
-      output: row.output ? JSON.parse(row.output) : undefined,
-      context: row.context ? JSON.parse(row.context) : undefined,
-      dimensions: row.dimensions ? JSON.parse(row.dimensions) : undefined,
-      tags: row.tags ? JSON.parse(row.tags) : undefined,
+      input: JSON.parse(row.input) as Interaction["input"],
+      output: row.output ? (JSON.parse(row.output) as Interaction["output"]) : undefined,
+      context: row.context ? (JSON.parse(row.context) as Interaction["context"]) : undefined,
+      dimensions: row.dimensions ? (JSON.parse(row.dimensions) as Interaction["dimensions"]) : undefined,
+      tags: row.tags ? (JSON.parse(row.tags) as Interaction["tags"]) : undefined,
       source: row.source || undefined,
     };
   }
@@ -166,16 +203,16 @@ export class SQLiteStore {
     const placeholders = interactionIds.map(() => "?").join(",");
     const rows = this.db
       .prepare(`SELECT * FROM interactions WHERE interactionId IN (${placeholders})`)
-      .all(...interactionIds) as any[];
+      .all(...interactionIds) as InteractionRow[];
 
     return rows.map((row) => ({
       interactionId: row.interactionId,
       timestamp: row.timestamp,
-      input: JSON.parse(row.input),
-      output: row.output ? JSON.parse(row.output) : undefined,
-      context: row.context ? JSON.parse(row.context) : undefined,
-      dimensions: row.dimensions ? JSON.parse(row.dimensions) : undefined,
-      tags: row.tags ? JSON.parse(row.tags) : undefined,
+      input: JSON.parse(row.input) as Interaction["input"],
+      output: row.output ? (JSON.parse(row.output) as Interaction["output"]) : undefined,
+      context: row.context ? (JSON.parse(row.context) as Interaction["context"]) : undefined,
+      dimensions: row.dimensions ? (JSON.parse(row.dimensions) as Interaction["dimensions"]) : undefined,
+      tags: row.tags ? (JSON.parse(row.tags) as Interaction["tags"]) : undefined,
       source: row.source || undefined,
     }));
   }
@@ -183,7 +220,7 @@ export class SQLiteStore {
   getAllInteractions(where?: Record<string, string>): Interaction[] {
     let query = "SELECT * FROM interactions";
     const conditions: string[] = [];
-    const values: any[] = [];
+    const values: string[] = [];
 
     if (where) {
       for (const [key, value] of Object.entries(where)) {
@@ -195,16 +232,16 @@ export class SQLiteStore {
       }
     }
 
-    const rows = this.db.prepare(query).all(...values) as any[];
+    const rows = this.db.prepare(query).all(...values) as InteractionRow[];
 
     return rows.map((row) => ({
       interactionId: row.interactionId,
       timestamp: row.timestamp,
-      input: JSON.parse(row.input),
-      output: row.output ? JSON.parse(row.output) : undefined,
-      context: row.context ? JSON.parse(row.context) : undefined,
-      dimensions: row.dimensions ? JSON.parse(row.dimensions) : undefined,
-      tags: row.tags ? JSON.parse(row.tags) : undefined,
+      input: JSON.parse(row.input) as Interaction["input"],
+      output: row.output ? (JSON.parse(row.output) as Interaction["output"]) : undefined,
+      context: row.context ? (JSON.parse(row.context) as Interaction["context"]) : undefined,
+      dimensions: row.dimensions ? (JSON.parse(row.dimensions) as Interaction["dimensions"]) : undefined,
+      tags: row.tags ? (JSON.parse(row.tags) as Interaction["tags"]) : undefined,
       source: row.source || undefined,
     }));
   }
@@ -235,7 +272,7 @@ export class SQLiteStore {
   getLabel(interactionId: string): Label | null {
     const row = this.db
       .prepare("SELECT * FROM labels WHERE interactionId = ?")
-      .get(interactionId) as any;
+      .get(interactionId) as LabelRow | undefined;
 
     if (!row) return null;
 
@@ -245,7 +282,7 @@ export class SQLiteStore {
       reviewer: row.reviewer,
       verdict: row.verdict as "pass" | "fail" | "needs_clarification",
       notes: row.notes || undefined,
-      expected: row.expected ? JSON.parse(row.expected) : undefined,
+      expected: row.expected ? (JSON.parse(row.expected) as Label["expected"]) : undefined,
     };
   }
 
@@ -255,7 +292,7 @@ export class SQLiteStore {
     const placeholders = interactionIds.map(() => "?").join(",");
     const rows = this.db
       .prepare(`SELECT * FROM labels WHERE interactionId IN (${placeholders})`)
-      .all(...interactionIds) as any[];
+      .all(...interactionIds) as LabelRow[];
 
     return rows.map((row) => ({
       interactionId: row.interactionId,
@@ -263,7 +300,7 @@ export class SQLiteStore {
       reviewer: row.reviewer,
       verdict: row.verdict as "pass" | "fail" | "needs_clarification",
       notes: row.notes || undefined,
-      expected: row.expected ? JSON.parse(row.expected) : undefined,
+      expected: row.expected ? (JSON.parse(row.expected) as Label["expected"]) : undefined,
     }));
   }
 
@@ -286,7 +323,7 @@ export class SQLiteStore {
   getDatasetVersion(name: string): DatasetVersion | null {
     const row = this.db
       .prepare("SELECT * FROM dataset_versions WHERE name = ?")
-      .get(name) as any;
+      .get(name) as DatasetVersionRow | undefined;
 
     if (!row) return null;
 
@@ -294,8 +331,8 @@ export class SQLiteStore {
       name: row.name,
       createdAt: row.createdAt,
       description: row.description || undefined,
-      interactionIds: JSON.parse(row.interactionIds),
-      stats: JSON.parse(row.stats),
+      interactionIds: JSON.parse(row.interactionIds) as string[],
+      stats: JSON.parse(row.stats) as DatasetVersion["stats"],
     };
   }
 
@@ -307,14 +344,17 @@ export class SQLiteStore {
   }> {
     const rows = this.db
       .prepare("SELECT name, createdAt, description, interactionIds FROM dataset_versions ORDER BY createdAt DESC")
-      .all() as any[];
+      .all() as DatasetVersionRow[];
 
-    return rows.map((row) => ({
-      name: row.name,
-      createdAt: row.createdAt,
-      description: row.description || undefined,
-      interactionCount: JSON.parse(row.interactionIds).length,
-    }));
+    return rows.map((row) => {
+      const interactionIds = JSON.parse(row.interactionIds) as string[];
+      return {
+        name: row.name,
+        createdAt: row.createdAt,
+        description: row.description || undefined,
+        interactionCount: interactionIds.length,
+      };
+    });
   }
 
   close(): void {

@@ -120,7 +120,7 @@ export async function parseJsonl<T>(
         lineNumber === 1 ? trimmed.replace(UTF8_BOM_REGEX, "") : trimmed;
 
       try {
-        const json = JSON.parse(normalized);
+        const json = JSON.parse(normalized) as unknown;
         const result = schema.safeParse(json);
 
         if (result.success) {
