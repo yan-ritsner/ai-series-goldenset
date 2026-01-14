@@ -1,5 +1,7 @@
 import type { Interaction } from "../types.js";
 
+const MISSING = "__missing__";
+
 export interface DimensionStats {
   byDimension: Record<string, Record<string, number>>;
   tagCounts: Record<string, number>;
@@ -16,41 +18,29 @@ export function computeStats(
   const byDimension: Record<string, Record<string, number>> = {};
   const tagCounts: Record<string, number> = {};
 
-  // Determine which dimension keys to track
-  const keysToTrack = dimensionKeys || extractDimensionKeys(interactions);
+  const keysToTrack = dimensionKeys?.length
+    ? [...dimensionKeys]
+    : extractDimensionKeys(interactions);
 
-  // Initialize dimension tracking
-  for (const key of keysToTrack) {
-    byDimension[key] = {};
-  }
+  for (const key of keysToTrack) byDimension[key] = {};
 
-  // Count interactions
   for (const interaction of interactions) {
-    // Count by dimensions
-    if (interaction.dimensions) {
-      for (const [key, value] of Object.entries(interaction.dimensions)) {
-        if (keysToTrack.includes(key)) {
-          if (!byDimension[key][value]) {
-            byDimension[key][value] = 0;
-          }
-          byDimension[key][value]++;
-        }
-      }
+    const dims = interaction.dimensions ?? {};
+
+    // ✅ Count missing explicitly
+    for (const key of keysToTrack) {
+      const value = dims[key] ?? MISSING;
+      byDimension[key][value] = (byDimension[key][value] ?? 0) + 1;
     }
 
-    // Count tags
     if (interaction.tags) {
       for (const tag of interaction.tags) {
-        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
       }
     }
   }
 
-  return {
-    byDimension,
-    tagCounts,
-    total: interactions.length,
-  };
+  return { byDimension, tagCounts, total: interactions.length };
 }
 
 /**
