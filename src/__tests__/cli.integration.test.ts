@@ -7,7 +7,7 @@ import { tmpdir } from "os";
 import { existsSync } from "fs";
 
 const execFileAsync = promisify(execFile);
-const cliPath = join(process.cwd(), "dist", "cli.js");
+const cliPath = join(process.cwd(), "dist", "src", "cli.js");
 
 describe("CLI integration", () => {
   let tempDir: string;
