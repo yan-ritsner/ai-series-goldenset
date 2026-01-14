@@ -2,6 +2,9 @@ import type { Interaction, Label, DatasetVersion } from "../types.js";
 import { computeStats } from "../analytics/stats.js";
 import { getDatasetsDir, ensureDir, writeJson, writeText } from "../../util/fs.js";
 import { join } from "path";
+import { createWriteStream } from "fs";
+import { existsSync } from "fs";
+import { once } from "events";
 
 export interface PublishOptions {
   name: string;
@@ -12,12 +15,37 @@ export interface PublishOptions {
 }
 
 /**
+ * Write JSONL file using streaming (memory-efficient for large datasets)
+ */
+async function writeJsonl(path: string, rows: unknown[]): Promise<void> {
+  const ws = createWriteStream(path, { encoding: "utf-8" });
+
+  for (const row of rows) {
+    if (!ws.write(JSON.stringify(row) + "\n")) {
+      await once(ws, "drain");
+    }
+  }
+
+  ws.end();
+  await once(ws, "finish");
+}
+
+/**
  * Publish a dataset version
  */
 export async function publishDataset(
   options: PublishOptions
 ): Promise<DatasetVersion> {
   const { name, description, interactions, labels, projectRoot } = options;
+
+  // Validate label references
+  const ids = new Set(interactions.map((i) => i.interactionId));
+  const unknown = labels.filter((l) => !ids.has(l.interactionId));
+  if (unknown.length > 0) {
+    throw new Error(
+      `Labels reference unknown interactionIds (e.g. ${unknown[0].interactionId})`
+    );
+  }
 
   // Compute stats
   const stats = computeStats(interactions);
@@ -37,20 +65,22 @@ export async function publishDataset(
   // Write to disk
   const datasetsDir = getDatasetsDir(projectRoot);
   const versionDir = join(datasetsDir, sanitizeVersionName(name));
+
+  // Prevent overwrite
+  if (existsSync(versionDir)) {
+    throw new Error(`Dataset version already exists: ${name}`);
+  }
+
   await ensureDir(versionDir);
 
   // Write dataset.json
   await writeJson(join(versionDir, "dataset.json"), version);
 
-  // Write interactions.jsonl
-  const interactionsJsonl = interactions
-    .map((i) => JSON.stringify(i))
-    .join("\n");
-  await writeText(join(versionDir, "interactions.jsonl"), interactionsJsonl);
+  // Write interactions.jsonl (streaming)
+  await writeJsonl(join(versionDir, "interactions.jsonl"), interactions);
 
-  // Write labels.jsonl
-  const labelsJsonl = labels.map((l) => JSON.stringify(l)).join("\n");
-  await writeText(join(versionDir, "labels.jsonl"), labelsJsonl);
+  // Write labels.jsonl (streaming)
+  await writeJsonl(join(versionDir, "labels.jsonl"), labels);
 
   // Write stats.json
   await writeJson(join(versionDir, "stats.json"), stats);
