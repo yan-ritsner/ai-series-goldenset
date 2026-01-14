@@ -9,6 +9,7 @@ import { labelTemplateCommand } from "./commands/labelTemplate.js";
 import { publishCommand } from "./commands/publish.js";
 import { versionsCommand } from "./commands/versions.js";
 import { exportCommand } from "./commands/export.js";
+import { cleanCommand } from "./commands/clean.js";
 
 const program = new Command();
 
@@ -25,6 +26,7 @@ program.addCommand(labelTemplateCommand());
 program.addCommand(publishCommand());
 program.addCommand(versionsCommand());
 program.addCommand(exportCommand());
+program.addCommand(cleanCommand());
 
 program.parse();
 

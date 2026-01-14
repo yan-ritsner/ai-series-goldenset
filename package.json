@@ -8,7 +8,10 @@
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsc",
-    "start": "node dist/cli.js"
+    "start": "node dist/cli.js",
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "clean": "node dist/cli.js clean",
+    "demo": "node dist/cli.js init && node dist/cli.js ingest interactions examples/internal-docs/interactions.jsonl && node dist/cli.js stats"
   },
   "keywords": [],
   "author": "",

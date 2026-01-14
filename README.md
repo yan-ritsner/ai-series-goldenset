@@ -91,6 +91,16 @@ npm install
 npm run build
 ```
 
+## Try It Out
+
+Run the demo to see goldenset in action:
+
+```bash
+npm run demo
+```
+
+This runs: `init` → `ingest example data` → `stats`
+
 ## Quick Start
 
 ```bash
@@ -128,6 +138,14 @@ goldenset init
 ```
 
 Creates `.goldenset/` directory and SQLite database.
+
+### Clean
+
+```bash
+goldenset clean [--datasets]
+```
+
+Removes `.goldenset/` directory (database and all local state). Use `--datasets` to also remove published datasets.
 
 ### Ingest
 
