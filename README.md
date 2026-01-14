@@ -91,6 +91,35 @@ npm install
 npm run build
 ```
 
+## Development
+
+### Scripts
+
+- `npm run build` - Compile TypeScript to JavaScript
+- `npm run dev` - Run CLI in development mode (using tsx)
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Auto-fix ESLint issues
+- `npm test` - Run tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run demo` - Run end-to-end demo
+- `npm run clean` - Clean up `.goldenset/` directory
+
+### Linting
+
+The project uses ESLint with TypeScript support and type-aware rules. Configuration is in `eslint.config.js`.
+
+### Testing
+
+Tests are written with Vitest and located alongside source files in `__tests__/` directories:
+
+- Unit tests for core logic (sampling, stats, deduplication, JSONL parsing)
+- Integration tests for CLI commands
+
+Run tests with:
+```bash
+npm test
+```
+
 ## Try It Out
 
 Run the demo to see goldenset in action:
@@ -246,3 +275,15 @@ MIT
 
 This tool uses only synthetic or public data in examples. No references to employer or confidential systems.
 
+### Development Workflow
+
+1. Make your changes
+2. Run `npm run lint` to check for issues
+3. Run `npm test` to ensure tests pass
+4. Run `npm run build` to verify the build succeeds
+
+The project uses:
+- **TypeScript** for type safety
+- **ESLint** with type-aware rules for code quality
+- **Vitest** for testing
+- **GitHub Actions** for CI/CD
