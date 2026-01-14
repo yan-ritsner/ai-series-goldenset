@@ -154,6 +154,9 @@ goldenset publish --name golden/v1 --sample sample.jsonl --labels labels.jsonl
 # List versions
 goldenset versions list
 
+# Compare versions
+goldenset versions diff golden/v1 golden/v2
+
 # Export a version
 goldenset export --name golden/v1 --out golden_v1.jsonl
 ```
@@ -222,9 +225,33 @@ Validates, computes stats, and writes immutable dataset version to `datasets/gol
 ```bash
 goldenset versions list
 goldenset versions show <name>
+goldenset versions diff <fromVersion> <toVersion> [--format text|json] [--dimensions key1,key2,...] [--limit N]
 ```
 
 List and inspect published dataset versions.
+
+**Diff Command:**
+Compare two dataset versions to see what changed:
+
+```bash
+# Text output (default)
+goldenset versions diff golden/v1 golden/v2
+
+# JSON output
+goldenset versions diff golden/v1 golden/v2 --format json
+
+# Limit number of items shown
+goldenset versions diff golden/v1 golden/v2 --limit 20
+
+# Track specific dimensions only
+goldenset versions diff golden/v1 golden/v2 --dimensions intent,department
+```
+
+The diff shows:
+- **Interactions**: Added, removed, and unchanged counts
+- **Dimensions**: Distribution changes for each dimension key
+- **Tags**: Tag count changes
+- **Labels**: New/removed labels and verdict changes
 
 ### Export
 

@@ -1,6 +1,7 @@
 import type { Interaction, Label, DatasetVersion } from "../types.js";
 import { computeStats } from "../analytics/stats.js";
 import { getDatasetsDir, ensureDir, writeJson, writeText } from "../../util/fs.js";
+import { sanitizeVersionName } from "./helpers.js";
 import { join } from "path";
 import { createWriteStream } from "fs";
 import { existsSync } from "fs";
@@ -90,13 +91,6 @@ export async function publishDataset(
   await writeText(join(versionDir, "changelog.md"), changelog);
 
   return version;
-}
-
-/**
- * Sanitize version name for filesystem
- */
-function sanitizeVersionName(name: string): string {
-  return name.replace(/\//g, "_");
 }
 
 /**
